@@ -1,5 +1,5 @@
 # 💫 About Me:
-Hi I'm Dylan, A Freshman studying CS at the University of Hawai'i!<br>I am currently a <br>- ChatGPT Lab Member at OpenAI<br>- Intern for Blue Startups<br>- Extern for Energy Innovation Capital<br>I was Previously at NASA,Hohonu.io & Stanford AIMI
+Hi I'm Dylan, A Freshman studying CS at the University of Hawai'i!<br>I am currently a <br>- ChatGPT Lab Member at OpenAI<br>- Intern for HTDC<br>- Extern for Pfizer<br>I was Previously at NASA,Hohonu.io,Stanford AIMI & Blue Startups
 
 
 ## 🌐 Socials:
