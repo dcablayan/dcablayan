@@ -13,7 +13,6 @@ import io
 import json
 import os
 import urllib.request
-from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
 
@@ -49,10 +48,6 @@ def github_data() -> dict:
         f"https://api.github.com/users/{USERNAME}/repos?per_page=100&type=owner"
     )
     owned_repos = [repo for repo in repos if not repo["fork"]]
-
-    languages: Counter[str] = Counter()
-    for repo in owned_repos:
-        languages.update(request_json(repo["languages_url"]))
 
     metrics = {
         "contributions": 0,
@@ -113,7 +108,7 @@ def github_data() -> dict:
             "deleted": sum(commit["deletions"] for history in histories for commit in history.get("nodes", [])),
         }
 
-    return {"user": user, "languages": languages, "metrics": metrics}
+    return {"user": user, "metrics": metrics}
 
 
 def portrait_data_uri(theme: str) -> str:
@@ -194,8 +189,6 @@ def section(y: int, title: str) -> str:
 def render_svg(data: dict, theme: str) -> str:
     user = data["user"]
     metrics = data["metrics"]
-    languages = [name for name, _ in data["languages"].most_common(3)]
-    language_text = ", ".join(languages) or "Python, TypeScript, JavaScript, Swift"
     total_loc = metrics["added"] - metrics["deleted"]
 
     themes = {
@@ -273,18 +266,18 @@ def render_svg(data: dict, theme: str) -> str:
 
     rows = [
         svg_row(30, [(None, "dylan@cablayan -" + "—" * 45 + "--")]),
-        svg_row(50, kv("OS", "macOS, iOS", 59)),
+        svg_row(50, kv("OS", "IOS 27, MacOS 27", 59)),
         svg_row(70, kv("Uptime", account_uptime(user["created_at"]), 59)),
         svg_row(90, kv("Host", "OpenAI & HTDC", 59)),
-        svg_row(110, kv("Kernel", "UHM '29 | ex-NASA", 59)),
+        svg_row(110, kv("Kernel", "ChatGPT Lab & Program Management Intern", 59)),
         svg_row(130, kv("IDE", "Cursor, VS Code", 59)),
         svg_row(150, [("cc", ". ")]),
-        svg_row(170, kv("Languages.Programming", language_text, 59)),
-        svg_row(190, kv("Languages.Computer", "HTML, CSS, SQL, Markdown", 59)),
-        svg_row(210, kv("Languages.Real", "English", 59)),
+        svg_row(170, kv("Languages.Programming", "Python, Java, Swift, Kotlin", 59)),
+        svg_row(190, kv("Languages.Computer", "HTML, CSS, SQL, JSON", 59)),
+        svg_row(210, kv("Languages.Real", "English & Tagalog", 59)),
         svg_row(230, [("cc", ". ")]),
         svg_row(250, kv("Hobbies.Software", "AI tools, web apps, open source", 59)),
-        svg_row(270, kv("Hobbies.Hardware", "Robotics, Formula 1", 59)),
+        svg_row(270, kv("Hobbies.Hardware", "Aviation, Formula, Trains", 59)),
         section(310, "Contact"),
         svg_row(330, kv("Email.Personal", "dcablayan07@gmail.com", 59)),
         svg_row(350, kv("Website", "dylancablayan.xyz", 59)),
