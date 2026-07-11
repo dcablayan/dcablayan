@@ -7,7 +7,9 @@ Visual reference: https://github.com/Andrew6rant/Andrew6rant
 from __future__ import annotations
 
 import calendar
+import base64
 import html
+import io
 import json
 import os
 import urllib.request
@@ -15,7 +17,7 @@ from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
 
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image, ImageOps
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -110,32 +112,25 @@ def github_data() -> dict:
     return {"user": user, "languages": languages, "metrics": metrics}
 
 
-def ascii_portrait(
-    path: Path, width: int = 45, height: int = 25
-) -> list[str]:
-    # Character cells are roughly twice as tall as they are wide, so 45x25
-    # produces a portrait-shaped image in a 16px monospace terminal grid.
-    glyphs = "  .,:;irsXA253hMHGS#9B&@"
-    with Image.open(path) as source:
-        source = source.convert("L")
-        crop = (
-            round(source.width * 0.17),
-            round(source.height * 0.01),
-            round(source.width * 0.83),
-            round(source.height * 0.72),
+def portrait_data_uri(theme: str) -> str:
+    """Recolor the generated ASCII portrait for either GitHub theme."""
+    foreground = "#c9d1d9" if theme == "dark" else "#24292f"
+    with Image.open(ROOT / "assets" / "ascii-portrait.png") as source:
+        gray = ImageOps.fit(
+            source.convert("L"), (375, 530), centering=(0.5, 0.46)
         )
-        image = source.crop(crop).resize((width, height), Image.Resampling.LANCZOS)
-        image = ImageOps.autocontrast(image, cutoff=1)
-        image = image.filter(ImageFilter.UnsharpMask(radius=1, percent=175, threshold=2))
-        image = ImageEnhance.Contrast(image).enhance(1.15)
-        pixels = list(image.getdata())
-        return [
-            "".join(
-                glyphs[(255 - pixel) * (len(glyphs) - 1) // 255]
-                for pixel in pixels[offset : offset + width]
-            ).rstrip()
-            for offset in range(0, width * height, width)
-        ]
+        # Remove the generated dark backdrop while retaining faint ASCII glyphs.
+        alpha = gray.point(
+            lambda pixel: 0
+            if pixel <= 24
+            else min(255, round(((pixel - 24) / 231) ** 0.82 * 255))
+        )
+        portrait = Image.new("RGBA", gray.size, foreground)
+        portrait.putalpha(alpha)
+        buffer = io.BytesIO()
+        portrait.save(buffer, format="PNG", optimize=True)
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
 
 
 def account_uptime(created_at: str) -> str:
@@ -221,10 +216,7 @@ def render_svg(data: dict, theme: str) -> str:
     }
     colors = themes[theme]
 
-    portrait = "\n".join(
-        f'<tspan x="15" y="{30 + index * 20}">{esc(line)}</tspan>'
-        for index, line in enumerate(ascii_portrait(ROOT / "assets" / "portrait.jpg"))
-    )
+    portrait = portrait_data_uri(theme)
 
     repo_stats = kv("Repos", user["public_repos"], 18)
     if metrics["contributed_repos"]:
@@ -276,7 +268,7 @@ def render_svg(data: dict, theme: str) -> str:
         svg_row(70, kv("Uptime", account_uptime(user["created_at"]), 59)),
         svg_row(90, kv("Host", "OpenAI & HTDC", 59)),
         svg_row(110, kv("Kernel", "UHM '29 | ex-NASA", 59)),
-        svg_row(130, kv("IDE", "Codex, VS Code, Xcode", 59)),
+        svg_row(130, kv("IDE", "Cursor, VS Code", 59)),
         svg_row(150, [("cc", ". ")]),
         svg_row(170, kv("Languages.Programming", language_text, 59)),
         svg_row(190, kv("Languages.Computer", "HTML, CSS, SQL, Markdown", 59)),
@@ -286,7 +278,7 @@ def render_svg(data: dict, theme: str) -> str:
         svg_row(270, kv("Hobbies.Hardware", "Robotics, Formula 1", 59)),
         section(310, "Contact"),
         svg_row(330, kv("Email.Personal", "dcablayan07@gmail.com", 59)),
-        svg_row(350, kv("Website", "dylancablayan.vercel.app", 59)),
+        svg_row(350, kv("Website", "dylancablayan.xyz", 59)),
         svg_row(370, kv("LinkedIn", "in/dylancablayan", 59)),
         svg_row(390, kv("X", "@dylancablayan", 59)),
         svg_row(410, kv("Location", "Honolulu, Hawaii", 59)),
@@ -315,9 +307,7 @@ def render_svg(data: dict, theme: str) -> str:
 text, tspan {{white-space: pre;}}
 </style>
 <rect width="985px" height="530px" fill="{colors['background']}" rx="15"/>
-<text x="15" y="30" fill="{colors['text']}" class="ascii" font-size="13.5px">
-{portrait}
-</text>
+<image x="0" y="0" width="375" height="530" href="{portrait}"/>
 <text x="390" y="30" fill="{colors['text']}" font-size="15px">
 {chr(10).join(rows)}
 </text>

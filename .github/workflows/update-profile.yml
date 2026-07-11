@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "assets/portrait.jpg"
+      - "assets/ascii-portrait.png"
       - "scripts/update_profile.py"
       - "requirements.txt"
 
