@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" font-family="ConsolasFallback,Consolas,monospace" width="985px" height="530px" font-size="16px" role="img" aria-labelledby="title desc">
+<title id="title">Dylan Cablayan's GitHub profile</title>
+<desc id="desc">ASCII portrait, personal details, contact links, and live GitHub statistics.</desc>
+<style>
+@font-face {
+  src: local('Consolas'), local('Consolas Bold');
+  font-family: 'ConsolasFallback';
+  font-display: swap;
+  -webkit-size-adjust: 109%;
+  size-adjust: 109%;
+}
+.key {fill: #ffa657;}
+.value {fill: #a5d6ff;}
+.addColor {fill: #3fb950;}
+.delColor {fill: #f85149;}
+.cc {fill: #616e7f;}
+text, tspan {white-space: pre;}
+</style>
+<rect width="985px" height="530px" fill="#161b22" rx="15"/>
+<text x="15" y="30" fill="#c9d1d9" class="ascii">
+<tspan x="15" y="30">            &#x27;tG8@@G!:;1f1;.</tspan>
+<tspan x="15" y="50">          i@@@@@@@@@@@@@@@@0!</tspan>
+<tspan x="15" y="70">        .G@@@@@@@@@@@@@@@@@@@8</tspan>
+<tspan x="15" y="90">       :@@@@@@@@@@@@@@@@@@@@@@0</tspan>
+<tspan x="15" y="110">      .@@@@@@@@@@@@@@@@@@8@@@@@!</tspan>
+<tspan x="15" y="130">      C888@@@@@@@@@@@@8@@@@@@@@!</tspan>
+<tspan x="15" y="150">      8888@@@@@@@@@@@@8@@@@@@@@,</tspan>
+<tspan x="15" y="170">      @@@@@8888@@@@@8@@@@@@@@@@&#x27;</tspan>
+<tspan x="15" y="190">      L@@@@8GCG8@8008@@@@@@@@@8;</tspan>
+<tspan x="15" y="210">       L@@@@GCtfC088@@@8ffG0@!&#x27;&#x27;</tspan>
+<tspan x="15" y="230">        @@@@@@0fG@@@@@@@0t`;C`:.</tspan>
+<tspan x="15" y="250">       :@@@@@@@ti@@@@@@@1,,`i&#x27;:</tspan>
+<tspan x="15" y="270">        !C0@@0f,.`tLLfi:.,&#x27;`!&#x27;.</tspan>
+<tspan x="15" y="290">        .:,...:. ,.,   ..,`!i,</tspan>
+<tspan x="15" y="310">         &#x27;,...;!```:....,:;i!</tspan>
+<tspan x="15" y="330">         ,&#x27;:,,`;&#x27;`&#x27;....,:`!iG0.</tspan>
+<tspan x="15" y="350">          ``&#x27;`!i!!;`&#x27;,,:&#x27;;tL@@f</tspan>
+<tspan x="15" y="370">           !`&#x27;````:,::&#x27;;iL0G@@@L`</tspan>
+<tspan x="15" y="390">        .:f@0t;&#x27;&#x27;:,,&#x27;;1C88C8@@@@@0L1`,</tspan>
+<tspan x="15" y="410">    ,;fG@@@@@@@CffffC8@@GL8@@@@@@@@@@@</tspan>
+<tspan x="15" y="430">`tG@@@@@@@@@@@@@@8@@80CLf0@@@@@@@@@@@@</tspan>
+<tspan x="15" y="450">@@@@@@@@@@@@@@@@@@888888@@@@@@@@@@@@@@</tspan>
+<tspan x="15" y="470">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</tspan>
+<tspan x="15" y="490">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</tspan>
+<tspan x="15" y="510">@@@@@@@@@@@@@@@@@@@L @@@@@@@@@@@@@@@@@</tspan>
+</text>
+<text x="390" y="30" fill="#c9d1d9" font-size="15px">
+<tspan x="390" y="30"><tspan>dylan@cablayan -—————————————————————————————————————————————--</tspan></tspan>
+<tspan x="390" y="50"><tspan class="cc">. </tspan><tspan class="key">OS</tspan><tspan>:</tspan><tspan class="cc"> .......................................... </tspan><tspan class="value">macOS, iOS</tspan></tspan>
+<tspan x="390" y="70"><tspan class="cc">. </tspan><tspan class="key">Uptime</tspan><tspan>:</tspan><tspan class="cc"> ...................... </tspan><tspan class="value">3 years, 0 months, 25 days</tspan></tspan>
+<tspan x="390" y="90"><tspan class="cc">. </tspan><tspan class="key">Host</tspan><tspan>:</tspan><tspan class="cc"> ..................................... </tspan><tspan class="value">OpenAI &amp; HTDC</tspan></tspan>
+<tspan x="390" y="110"><tspan class="cc">. </tspan><tspan class="key">Kernel</tspan><tspan>:</tspan><tspan class="cc"> ............................... </tspan><tspan class="value">UHM &#x27;29 | ex-NASA</tspan></tspan>
+<tspan x="390" y="130"><tspan class="cc">. </tspan><tspan class="key">IDE</tspan><tspan>:</tspan><tspan class="cc"> .............................. </tspan><tspan class="value">Codex, VS Code, Xcode</tspan></tspan>
+<tspan x="390" y="150"><tspan class="cc">. </tspan></tspan>
+<tspan x="390" y="170"><tspan class="cc">. </tspan><tspan class="key">Languages.Programming</tspan><tspan>:</tspan><tspan class="cc"> ......... </tspan><tspan class="value">Python, HTML, TypeScript</tspan></tspan>
+<tspan x="390" y="190"><tspan class="cc">. </tspan><tspan class="key">Languages.Computer</tspan><tspan>:</tspan><tspan class="cc"> ............ </tspan><tspan class="value">HTML, CSS, SQL, Markdown</tspan></tspan>
+<tspan x="390" y="210"><tspan class="cc">. </tspan><tspan class="key">Languages.Real</tspan><tspan>:</tspan><tspan class="cc"> ................................. </tspan><tspan class="value">English</tspan></tspan>
+<tspan x="390" y="230"><tspan class="cc">. </tspan></tspan>
+<tspan x="390" y="250"><tspan class="cc">. </tspan><tspan class="key">Hobbies.Software</tspan><tspan>:</tspan><tspan class="cc"> ....... </tspan><tspan class="value">AI tools, web apps, open source</tspan></tspan>
+<tspan x="390" y="270"><tspan class="cc">. </tspan><tspan class="key">Hobbies.Hardware</tspan><tspan>:</tspan><tspan class="cc"> ................... </tspan><tspan class="value">Robotics, Formula 1</tspan></tspan>
+<tspan x="390" y="310"><tspan>- Contact -——————————————————————————————————————————————————--</tspan></tspan>
+<tspan x="390" y="330"><tspan class="cc">. </tspan><tspan class="key">Email.Personal</tspan><tspan>:</tspan><tspan class="cc"> ................... </tspan><tspan class="value">dcablayan07@gmail.com</tspan></tspan>
+<tspan x="390" y="350"><tspan class="cc">. </tspan><tspan class="key">Website</tspan><tspan>:</tspan><tspan class="cc"> ....................... </tspan><tspan class="value">dylancablayan.vercel.app</tspan></tspan>
+<tspan x="390" y="370"><tspan class="cc">. </tspan><tspan class="key">LinkedIn</tspan><tspan>:</tspan><tspan class="cc"> .............................. </tspan><tspan class="value">in/dylancablayan</tspan></tspan>
+<tspan x="390" y="390"><tspan class="cc">. </tspan><tspan class="key">X</tspan><tspan>:</tspan><tspan class="cc"> ....................................... </tspan><tspan class="value">@dylancablayan</tspan></tspan>
+<tspan x="390" y="410"><tspan class="cc">. </tspan><tspan class="key">Location</tspan><tspan>:</tspan><tspan class="cc"> .............................. </tspan><tspan class="value">Honolulu, Hawaii</tspan></tspan>
+<tspan x="390" y="450"><tspan>- GitHub Stats -—————————————————————————————————————————————--</tspan></tspan>
+<tspan x="390" y="470"><tspan class="cc">. </tspan><tspan class="key">Repos</tspan><tspan>:</tspan><tspan class="cc"> ....... </tspan><tspan class="value">4</tspan><tspan> {</tspan><tspan class="key">Contributed</tspan><tspan>: </tspan><tspan class="value">16</tspan><tspan>} | </tspan><tspan class="key">Stars</tspan><tspan>:</tspan><tspan class="cc"> ......... </tspan><tspan class="value">0</tspan></tspan>
+<tspan x="390" y="490"><tspan class="cc">. </tspan><tspan class="key">Commits</tspan><tspan>:</tspan><tspan class="cc"> ....... </tspan><tspan class="value">46</tspan><tspan> | </tspan><tspan class="key">Contributions</tspan><tspan>: </tspan><tspan class="value">1,162</tspan><tspan> | </tspan><tspan class="key">Followers</tspan><tspan>: </tspan><tspan class="value">0</tspan></tspan>
+<tspan x="390" y="510"><tspan class="cc">. </tspan><tspan class="key">Lines of Code on GitHub</tspan><tspan>:</tspan><tspan class="cc"> ... </tspan><tspan class="value">856,659</tspan><tspan> ( </tspan><tspan class="addColor">872,035++</tspan><tspan>, </tspan><tspan class="delColor">15,376--</tspan><tspan> )</tspan></tspan>
+</text>
+</svg>
