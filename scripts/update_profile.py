@@ -111,26 +111,23 @@ def github_data() -> dict:
 
 
 def ascii_portrait(
-    path: Path, style: str = "tonal", width: int = 38, height: int = 25
+    path: Path, width: int = 45, height: int = 25
 ) -> list[str]:
-    # Character cells are roughly twice as tall as they are wide, so 38x25
+    # Character cells are roughly twice as tall as they are wide, so 45x25
     # produces a portrait-shaped image in a 16px monospace terminal grid.
-    glyphs = "  ..,:'`;!i1tfLCG08@"
+    glyphs = "  .,:;irsXA253hMHGS#9B&@"
     with Image.open(path) as source:
         source = source.convert("L")
         crop = (
-            round(source.width * 0.16),
-            0,
-            round(source.width * 0.84),
-            round(source.height * 0.77),
+            round(source.width * 0.17),
+            round(source.height * 0.01),
+            round(source.width * 0.83),
+            round(source.height * 0.72),
         )
         image = source.crop(crop).resize((width, height), Image.Resampling.LANCZOS)
         image = ImageOps.autocontrast(image, cutoff=1)
-        image = ImageEnhance.Contrast(image).enhance(1.5)
-        if style == "edge":
-            edges = ImageOps.invert(image.filter(ImageFilter.FIND_EDGES))
-            edges = ImageOps.autocontrast(edges, cutoff=2)
-            image = Image.blend(image, edges, 0.34)
+        image = image.filter(ImageFilter.UnsharpMask(radius=1, percent=175, threshold=2))
+        image = ImageEnhance.Contrast(image).enhance(1.15)
         pixels = list(image.getdata())
         return [
             "".join(
@@ -195,7 +192,7 @@ def section(y: int, title: str) -> str:
     return svg_row(y, [(None, f"- {title} -{rule}--")])
 
 
-def render_svg(data: dict, theme: str, portrait_style: str = "tonal") -> str:
+def render_svg(data: dict, theme: str) -> str:
     user = data["user"]
     metrics = data["metrics"]
     languages = [name for name, _ in data["languages"].most_common(3)]
@@ -226,10 +223,52 @@ def render_svg(data: dict, theme: str, portrait_style: str = "tonal") -> str:
 
     portrait = "\n".join(
         f'<tspan x="15" y="{30 + index * 20}">{esc(line)}</tspan>'
-        for index, line in enumerate(
-            ascii_portrait(ROOT / "assets" / "portrait.jpg", portrait_style)
-        )
+        for index, line in enumerate(ascii_portrait(ROOT / "assets" / "portrait.jpg"))
     )
+
+    repo_stats = kv("Repos", user["public_repos"], 18)
+    if metrics["contributed_repos"]:
+        repo_stats += [
+            (None, " {"),
+            ("key", "Contributed"),
+            (None, ": "),
+            ("value", str(metrics["contributed_repos"])),
+            (None, "}"),
+        ]
+    if metrics["stars"]:
+        repo_stats += [
+            (None, " | "),
+            ("key", "Stars"),
+            (None, ": "),
+            ("value", str(metrics["stars"])),
+        ]
+
+    activity_stats = kv("Commits", f'{metrics["commits"]:,}', 21)
+    if metrics["contributions"]:
+        activity_stats += [
+            (None, " | "),
+            ("key", "Contributions"),
+            (None, ": "),
+            ("value", f'{metrics["contributions"]:,}'),
+        ]
+    if user["followers"]:
+        activity_stats += [
+            (None, " | "),
+            ("key", "Followers"),
+            (None, ": "),
+            ("value", f'{user["followers"]:,}'),
+        ]
+
+    loc_stats = kv("Lines of Code on GitHub", f"{total_loc:,}", 38)
+    loc_changes: list[tuple[str | None, str]] = []
+    if metrics["added"]:
+        loc_changes.append(("addColor", f'{metrics["added"]:,}++'))
+    if metrics["deleted"]:
+        if loc_changes:
+            loc_changes.append((None, ", "))
+        loc_changes.append(("delColor", f'{metrics["deleted"]:,}--'))
+    if loc_changes:
+        loc_stats += [(None, " ( ")] + loc_changes + [(None, " )")]
 
     rows = [
         svg_row(30, [(None, "dylan@cablayan -" + "—" * 45 + "--")]),
@@ -252,22 +291,9 @@ def render_svg(data: dict, theme: str, portrait_style: str = "tonal") -> str:
         svg_row(390, kv("X", "@dylancablayan", 59)),
         svg_row(410, kv("Location", "Honolulu, Hawaii", 59)),
         section(450, "GitHub Stats"),
-        svg_row(
-            470,
-            kv("Repos", user["public_repos"], 18)
-            + [(None, " {"), ("key", "Contributed"), (None, ": "), ("value", str(metrics["contributed_repos"])), (None, "} | ")]
-            + kv("Stars", metrics["stars"], 20)[1:],
-        ),
-        svg_row(
-            490,
-            kv("Commits", f'{metrics["commits"]:,}', 21)
-            + [(None, " | "), ("key", "Contributions"), (None, ": "), ("value", f'{metrics["contributions"]:,}'), (None, " | "), ("key", "Followers"), (None, ": "), ("value", f'{user["followers"]:,}')],
-        ),
-        svg_row(
-            510,
-            kv("Lines of Code on GitHub", f"{total_loc:,}", 38)
-            + [(None, " ( "), ("addColor", f'{metrics["added"]:,}++'), (None, ", "), ("delColor", f'{metrics["deleted"]:,}--'), (None, " )")],
-        ),
+        svg_row(470, repo_stats),
+        svg_row(490, activity_stats),
+        svg_row(510, loc_stats),
     ]
 
     return f'''<svg xmlns="http://www.w3.org/2000/svg" font-family="ConsolasFallback,Consolas,monospace" width="985px" height="530px" font-size="16px" role="img" aria-labelledby="title desc">
@@ -289,7 +315,7 @@ def render_svg(data: dict, theme: str, portrait_style: str = "tonal") -> str:
 text, tspan {{white-space: pre;}}
 </style>
 <rect width="985px" height="530px" fill="{colors['background']}" rx="15"/>
-<text x="15" y="30" fill="{colors['text']}" class="ascii">
+<text x="15" y="30" fill="{colors['text']}" class="ascii" font-size="13.5px">
 {portrait}
 </text>
 <text x="390" y="30" fill="{colors['text']}" font-size="15px">
@@ -301,14 +327,9 @@ text, tspan {{white-space: pre;}}
 
 def main() -> None:
     data = github_data()
-    for theme, portrait_style, suffix in (
-        ("dark", "tonal", ""),
-        ("light", "tonal", ""),
-        ("dark", "edge", "_alt"),
-        ("light", "edge", "_alt"),
-    ):
-        output = ROOT / f"{theme}_mode{suffix}.svg"
-        output.write_text(render_svg(data, theme, portrait_style), encoding="utf-8")
+    for theme in ("dark", "light"):
+        output = ROOT / f"{theme}_mode.svg"
+        output.write_text(render_svg(data, theme), encoding="utf-8")
         print(f"updated {output.relative_to(ROOT)}")
 
 
