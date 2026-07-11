@@ -22,9 +22,10 @@ from PIL import Image, ImageOps
 
 ROOT = Path(__file__).resolve().parents[1]
 USERNAME = "dcablayan"
-# GitHub's public user API excludes private repositories. Dylan's profile total
-# includes 16 repositories, so preserve that known total during daily refreshes.
+# GitHub Actions can only see public repository relationships. Dylan's signed-in
+# profile totals are 16 owned and 16 contributed, so preserve both on refresh.
 PROFILE_REPOSITORY_COUNT = 16
+PROFILE_CONTRIBUTED_REPOSITORY_COUNT = 16
 TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN", "")
 HEADERS = {
     "Accept": "application/vnd.github+json",
@@ -222,16 +223,17 @@ def render_svg(data: dict, theme: str) -> str:
     portrait = portrait_data_uri(theme)
 
     repo_count = max(PROFILE_REPOSITORY_COUNT, user["public_repos"])
+    contributed_repo_count = max(
+        PROFILE_CONTRIBUTED_REPOSITORY_COUNT,
+        metrics["contributed_repos"],
+    )
     repo_stats = kv("Repos", repo_count, 18)
-    if (
-        metrics["contributed_repos"]
-        and metrics["contributed_repos"] != repo_count
-    ):
+    if contributed_repo_count:
         repo_stats += [
             (None, " {"),
             ("key", "Contributed"),
             (None, ": "),
-            ("value", str(metrics["contributed_repos"])),
+            ("value", str(contributed_repo_count)),
             (None, "}"),
         ]
     if metrics["stars"]:
