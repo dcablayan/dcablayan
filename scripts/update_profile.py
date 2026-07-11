@@ -1,34 +1,40 @@
 #!/usr/bin/env python3
-"""Generate the terminal-style profile card from GitHub data and a portrait."""
+"""Generate Andrew6rant-style light/dark GitHub profile cards.
+
+Visual reference: https://github.com/Andrew6rant/Andrew6rant
+"""
 
 from __future__ import annotations
 
+import calendar
+import base64
 import html
+import io
 import json
 import os
 import urllib.request
 from collections import Counter
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
-from PIL import Image, ImageEnhance, ImageOps
+from PIL import Image, ImageOps
 
 
 ROOT = Path(__file__).resolve().parents[1]
 USERNAME = "dcablayan"
 TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN", "")
-API_HEADERS = {
+HEADERS = {
     "Accept": "application/vnd.github+json",
     "User-Agent": f"{USERNAME}-profile-readme",
     "X-GitHub-Api-Version": "2022-11-28",
 }
 if TOKEN:
-    API_HEADERS["Authorization"] = f"Bearer {TOKEN}"
+    HEADERS["Authorization"] = f"Bearer {TOKEN}"
 
 
 def request_json(url: str, *, payload: dict | None = None) -> dict | list:
-    data = json.dumps(payload).encode() if payload else None
-    request = urllib.request.Request(url, data=data, headers=API_HEADERS)
+    body = json.dumps(payload).encode() if payload else None
+    request = urllib.request.Request(url, data=body, headers=HEADERS)
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.load(response)
 
@@ -42,162 +48,279 @@ def github_data() -> dict:
 
     languages: Counter[str] = Counter()
     for repo in owned_repos:
-        repo_languages = request_json(repo["languages_url"])
-        languages.update(repo_languages)
+        languages.update(request_json(repo["languages_url"]))
 
-    contributions = {
-        "total": 0,
+    metrics = {
+        "contributions": 0,
+        "contributed_repos": len(owned_repos),
         "commits": 0,
-        "issues": 0,
-        "pull_requests": 0,
+        "stars": sum(repo["stargazers_count"] for repo in owned_repos),
+        "added": 0,
+        "deleted": 0,
     }
     if TOKEN:
         query = """
-        query($login: String!) {
+        query($login: String!, $authorId: ID!) {
           user(login: $login) {
-            contributionsCollection {
+            contributionCalendar: contributionsCollection {
               contributionCalendar { totalContributions }
-              totalCommitContributions
-              totalIssueContributions
-              totalPullRequestContributions
+            }
+            repositoriesContributedTo(
+              first: 1,
+              contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, REPOSITORY],
+              includeUserRepositories: true
+            ) { totalCount }
+            repositories(first: 100, ownerAffiliations: OWNER, privacy: PUBLIC) {
+              nodes {
+                stargazerCount
+                defaultBranchRef {
+                  target {
+                    ... on Commit {
+                      history(first: 100, author: {id: $authorId}) {
+                        totalCount
+                        nodes { additions deletions }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
         """
         result = request_json(
             "https://api.github.com/graphql",
-            payload={"query": query, "variables": {"login": USERNAME}},
-        )
-        collection = result["data"]["user"]["contributionsCollection"]
-        contributions = {
-            "total": collection["contributionCalendar"]["totalContributions"],
-            "commits": collection["totalCommitContributions"],
-            "issues": collection["totalIssueContributions"],
-            "pull_requests": collection["totalPullRequestContributions"],
+            payload={
+                "query": query,
+                "variables": {"login": USERNAME, "authorId": user["node_id"]},
+            },
+        )["data"]["user"]
+        histories = [
+            repo.get("defaultBranchRef", {}).get("target", {}).get("history", {})
+            for repo in result["repositories"]["nodes"]
+            if repo.get("defaultBranchRef")
+        ]
+        metrics = {
+            "contributions": result["contributionCalendar"]["contributionCalendar"]["totalContributions"],
+            "contributed_repos": result["repositoriesContributedTo"]["totalCount"],
+            "commits": sum(history.get("totalCount", 0) for history in histories),
+            "stars": sum(repo["stargazerCount"] for repo in result["repositories"]["nodes"]),
+            "added": sum(commit["additions"] for history in histories for commit in history.get("nodes", [])),
+            "deleted": sum(commit["deletions"] for history in histories for commit in history.get("nodes", [])),
         }
 
-    return {
-        "user": user,
-        "repos": owned_repos,
-        "languages": languages,
-        "contributions": contributions,
-    }
+    return {"user": user, "languages": languages, "metrics": metrics}
 
 
-def ascii_portrait(path: Path, width: int = 60, height: int = 39) -> list[str]:
-    chars = "  ..,:;irsXA253hMHGS#9B&@"
-    with Image.open(path) as source:
-        image = ImageOps.fit(source.convert("L"), (width, height))
-        image = ImageOps.autocontrast(image, cutoff=1)
-        image = ImageEnhance.Contrast(image).enhance(1.35)
-        # Dark source pixels become dense glyphs; the light background disappears.
-        return [
-            "".join(chars[(255 - pixel) * (len(chars) - 1) // 255] for pixel in row)
-            for row in (list(image.getdata())[i : i + width] for i in range(0, width * height, width))
-        ]
+def portrait_data_uri(theme: str) -> str:
+    """Recolor the generated ASCII portrait for either GitHub theme."""
+    foreground = "#c9d1d9" if theme == "dark" else "#24292f"
+    with Image.open(ROOT / "assets" / "ascii-portrait.png") as source:
+        gray = ImageOps.fit(
+            source.convert("L"), (375, 530), centering=(0.5, 0.46)
+        )
+        # Remove the generated dark backdrop while retaining faint ASCII glyphs.
+        alpha = gray.point(
+            lambda pixel: 0
+            if pixel <= 24
+            else min(255, round(((pixel - 24) / 231) ** 0.82 * 255))
+        )
+        portrait = Image.new("RGBA", gray.size, foreground)
+        portrait.putalpha(alpha)
+        buffer = io.BytesIO()
+        portrait.save(buffer, format="PNG", optimize=True)
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
 
 
-def fmt(value: int) -> str:
-    return f"{value:,}"
+def account_uptime(created_at: str) -> str:
+    start = datetime.fromisoformat(created_at.replace("Z", "+00:00")).date()
+    today = date.today()
+    years = today.year - start.year
+    if (today.month, today.day) < (start.month, start.day):
+        years -= 1
+    anchor_year = start.year + years
+    anchor_day = min(start.day, calendar.monthrange(anchor_year, start.month)[1])
+    anchor = date(anchor_year, start.month, anchor_day)
+    months = (today.year - anchor.year) * 12 + today.month - anchor.month
+    if today.day < anchor.day:
+        months -= 1
+    month_number = anchor.month - 1 + months
+    month_year = anchor.year + month_number // 12
+    month = month_number % 12 + 1
+    day = min(anchor.day, calendar.monthrange(month_year, month)[1])
+    month_anchor = date(month_year, month, day)
+    days = (today - month_anchor).days
+    return f"{years} years, {months} months, {days} days"
 
 
-def svg_text(value: object) -> str:
+def esc(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
-def render_svg(data: dict) -> str:
-    user = data["user"]
-    contributions = data["contributions"]
-    portrait = ascii_portrait(ROOT / "assets" / "portrait.jpg")
-    top_languages = data["languages"].most_common(4)
-    language_total = sum(count for _, count in top_languages) or 1
-    language_colors = {
-        "Python": "#3572A5",
-        "TypeScript": "#3178C6",
-        "JavaScript": "#F1E05A",
-        "HTML": "#E34C26",
-        "CSS": "#663399",
-        "Swift": "#F05138",
-        "C++": "#F34B7D",
-    }
+def span(css_class: str | None, value: object) -> str:
+    class_attr = f' class="{css_class}"' if css_class else ""
+    return f"<tspan{class_attr}>{esc(value)}</tspan>"
 
-    portrait_lines = "\n".join(
-        f'<tspan x="42" dy="14">{svg_text(line)}</tspan>' for line in portrait
-    )
 
-    stats = [
-        ("Contributions (12 mo)", fmt(contributions["total"])),
-        ("Public repositories", fmt(user["public_repos"])),
-        ("Followers / following", f'{fmt(user["followers"])} / {fmt(user["following"])}'),
-        ("Pull requests", fmt(contributions["pull_requests"])),
-        ("Issues", fmt(contributions["issues"])),
-        ("Member since", datetime.fromisoformat(user["created_at"].replace("Z", "+00:00")).strftime("%b %Y")),
+def kv(label: str, value: object, width: int) -> list[tuple[str | None, str]]:
+    value = str(value)
+    prefix_length = len(label) + 3  # leading dot/space and colon
+    dots = max(1, width - prefix_length - len(value) - 2)
+    return [
+        ("cc", ". "),
+        ("key", label),
+        (None, ":"),
+        ("cc", " " + "." * dots + " "),
+        ("value", value),
     ]
-    stat_lines = "\n".join(
-        f'<tspan x="682" dy="31"><tspan fill="#7ee787">{svg_text(label.ljust(25))}</tspan>'
-        f'<tspan fill="#e6edf3">{svg_text(value)}</tspan></tspan>'
-        for label, value in stats
-    )
 
-    language_x = 682
-    language_blocks: list[str] = []
-    for name, count in top_languages:
-        width = round(405 * count / language_total, 1)
-        color = language_colors.get(name, "#8b949e")
-        language_blocks.append(
-            f'<rect x="{language_x}" y="484" width="{width}" height="8" fill="{color}" />'
-        )
-        language_x += width
-    language_labels = "  ·  ".join(name for name, _ in top_languages)
 
-    bio = (user.get("bio") or "building useful things").strip()
+def svg_row(y: int, segments: list[tuple[str | None, str]]) -> str:
+    return f'<tspan x="390" y="{y}">' + "".join(
+        span(css_class, value) for css_class, value in segments
+    ) + "</tspan>"
 
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
-  <title id="title">Dylan Cablayan's GitHub profile</title>
-  <desc id="desc">An ASCII portrait beside live GitHub profile statistics.</desc>
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#070a0f"/>
-      <stop offset="1" stop-color="#0d1117"/>
-    </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="2.5" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
 
-  <rect width="1200" height="620" rx="18" fill="url(#bg)"/>
-  <rect x="1" y="1" width="1198" height="618" rx="17" fill="none" stroke="#30363d"/>
-  <circle cx="25" cy="25" r="6" fill="#ff5f57"/>
-  <circle cx="45" cy="25" r="6" fill="#febc2e"/>
-  <circle cx="65" cy="25" r="6" fill="#28c840"/>
-  <text x="600" y="30" text-anchor="middle" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">dcablayan — profile</text>
-  <line x1="0" y1="48" x2="1200" y2="48" stroke="#21262d"/>
+def section(y: int, title: str) -> str:
+    rule = "—" * max(1, 57 - len(title))
+    return svg_row(y, [(None, f"- {title} -{rule}--")])
 
-  <text x="42" y="72" fill="#39d0d8" opacity="0.94" filter="url(#glow)" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.7" xml:space="preserve">{portrait_lines}</text>
-  <line x1="635" y1="76" x2="635" y2="557" stroke="#21262d"/>
 
-  <text x="682" y="106" fill="#f0f6fc" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="28" font-weight="700">{svg_text(user["name"])}</text>
-  <text x="682" y="136" fill="#39d0d8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16">@{svg_text(user["login"])}</text>
-  <text x="682" y="170" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">{svg_text(bio)}</text>
-  <line x1="682" y1="194" x2="1137" y2="194" stroke="#30363d"/>
+def render_svg(data: dict, theme: str) -> str:
+    user = data["user"]
+    metrics = data["metrics"]
+    languages = [name for name, _ in data["languages"].most_common(3)]
+    language_text = ", ".join(languages) or "Python, TypeScript, JavaScript, Swift"
+    total_loc = metrics["added"] - metrics["deleted"]
 
-  <text x="682" y="221" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" xml:space="preserve">{stat_lines}</text>
+    themes = {
+        "dark": {
+            "background": "#161b22",
+            "text": "#c9d1d9",
+            "key": "#ffa657",
+            "value": "#a5d6ff",
+            "add": "#3fb950",
+            "delete": "#f85149",
+            "cc": "#616e7f",
+        },
+        "light": {
+            "background": "#f6f8fa",
+            "text": "#24292f",
+            "key": "#953800",
+            "value": "#0a3069",
+            "add": "#1a7f37",
+            "delete": "#cf222e",
+            "cc": "#c2cfde",
+        },
+    }
+    colors = themes[theme]
 
-  <text x="682" y="461" fill="#f0f6fc" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700">TOP LANGUAGES</text>
-  <g>{''.join(language_blocks)}</g>
-  <text x="682" y="516" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">{svg_text(language_labels)}</text>
+    portrait = portrait_data_uri(theme)
 
-  <text x="682" y="557" fill="#39d0d8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">Honolulu, Hawaiʻi  •  building at the edge of AI</text>
-  <text x="1158" y="596" text-anchor="end" fill="#484f58" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10">auto-refreshed daily</text>
+    repo_stats = kv("Repos", user["public_repos"], 18)
+    if metrics["contributed_repos"]:
+        repo_stats += [
+            (None, " {"),
+            ("key", "Contributed"),
+            (None, ": "),
+            ("value", str(metrics["contributed_repos"])),
+            (None, "}"),
+        ]
+    if metrics["stars"]:
+        repo_stats += [
+            (None, " | "),
+            ("key", "Stars"),
+            (None, ": "),
+            ("value", str(metrics["stars"])),
+        ]
+
+    activity_stats = kv("Commits", f'{metrics["commits"]:,}', 21)
+    if metrics["contributions"]:
+        activity_stats += [
+            (None, " | "),
+            ("key", "Contributions"),
+            (None, ": "),
+            ("value", f'{metrics["contributions"]:,}'),
+        ]
+    if user["followers"]:
+        activity_stats += [
+            (None, " | "),
+            ("key", "Followers"),
+            (None, ": "),
+            ("value", f'{user["followers"]:,}'),
+        ]
+
+    loc_stats = kv("Lines of Code on GitHub", f"{total_loc:,}", 38)
+    loc_changes: list[tuple[str | None, str]] = []
+    if metrics["added"]:
+        loc_changes.append(("addColor", f'{metrics["added"]:,}++'))
+    if metrics["deleted"]:
+        if loc_changes:
+            loc_changes.append((None, ", "))
+        loc_changes.append(("delColor", f'{metrics["deleted"]:,}--'))
+    if loc_changes:
+        loc_stats += [(None, " ( ")] + loc_changes + [(None, " )")]
+
+    rows = [
+        svg_row(30, [(None, "dylan@cablayan -" + "—" * 45 + "--")]),
+        svg_row(50, kv("OS", "macOS, iOS", 59)),
+        svg_row(70, kv("Uptime", account_uptime(user["created_at"]), 59)),
+        svg_row(90, kv("Host", "OpenAI & HTDC", 59)),
+        svg_row(110, kv("Kernel", "UHM '29 | ex-NASA", 59)),
+        svg_row(130, kv("IDE", "Cursor, VS Code", 59)),
+        svg_row(150, [("cc", ". ")]),
+        svg_row(170, kv("Languages.Programming", language_text, 59)),
+        svg_row(190, kv("Languages.Computer", "HTML, CSS, SQL, Markdown", 59)),
+        svg_row(210, kv("Languages.Real", "English", 59)),
+        svg_row(230, [("cc", ". ")]),
+        svg_row(250, kv("Hobbies.Software", "AI tools, web apps, open source", 59)),
+        svg_row(270, kv("Hobbies.Hardware", "Robotics, Formula 1", 59)),
+        section(310, "Contact"),
+        svg_row(330, kv("Email.Personal", "dcablayan07@gmail.com", 59)),
+        svg_row(350, kv("Website", "dylancablayan.xyz", 59)),
+        svg_row(370, kv("LinkedIn", "in/dylancablayan", 59)),
+        svg_row(390, kv("X", "@dylancablayan", 59)),
+        svg_row(410, kv("Location", "Honolulu, Hawaii", 59)),
+        section(450, "GitHub Stats"),
+        svg_row(470, repo_stats),
+        svg_row(490, activity_stats),
+        svg_row(510, loc_stats),
+    ]
+
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" font-family="ConsolasFallback,Consolas,monospace" width="985px" height="530px" font-size="16px" role="img" aria-labelledby="title desc">
+<title id="title">Dylan Cablayan's GitHub profile</title>
+<desc id="desc">ASCII portrait, personal details, contact links, and live GitHub statistics.</desc>
+<style>
+@font-face {{
+  src: local('Consolas'), local('Consolas Bold');
+  font-family: 'ConsolasFallback';
+  font-display: swap;
+  -webkit-size-adjust: 109%;
+  size-adjust: 109%;
+}}
+.key {{fill: {colors['key']};}}
+.value {{fill: {colors['value']};}}
+.addColor {{fill: {colors['add']};}}
+.delColor {{fill: {colors['delete']};}}
+.cc {{fill: {colors['cc']};}}
+text, tspan {{white-space: pre;}}
+</style>
+<rect width="985px" height="530px" fill="{colors['background']}" rx="15"/>
+<image x="0" y="0" width="375" height="530" href="{portrait}"/>
+<text x="390" y="30" fill="{colors['text']}" font-size="15px">
+{chr(10).join(rows)}
+</text>
 </svg>
 '''
 
 
 def main() -> None:
-    output = ROOT / "assets" / "profile-card.svg"
-    output.write_text(render_svg(github_data()), encoding="utf-8")
-    print(f"updated {output.relative_to(ROOT)}")
+    data = github_data()
+    for theme in ("dark", "light"):
+        output = ROOT / f"{theme}_mode.svg"
+        output.write_text(render_svg(data, theme), encoding="utf-8")
+        print(f"updated {output.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
