@@ -66,15 +66,15 @@
   <text x="682" y="170" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">UHM &#x27;29 | currently @ OpenAI &amp; HTDC | ex-NASA</text>
   <line x1="682" y1="194" x2="1137" y2="194" stroke="#30363d"/>
 
-  <text x="682" y="221" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" xml:space="preserve"><tspan x="682" dy="31"><tspan fill="#7ee787">Contributions (12 mo)    </tspan><tspan fill="#e6edf3">1,159</tspan></tspan>
+  <text x="682" y="221" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" xml:space="preserve"><tspan x="682" dy="31"><tspan fill="#7ee787">Contributions (12 mo)    </tspan><tspan fill="#e6edf3">1,162</tspan></tspan>
 <tspan x="682" dy="31"><tspan fill="#7ee787">Public repositories      </tspan><tspan fill="#e6edf3">4</tspan></tspan>
 <tspan x="682" dy="31"><tspan fill="#7ee787">Followers / following    </tspan><tspan fill="#e6edf3">0 / 12</tspan></tspan>
-<tspan x="682" dy="31"><tspan fill="#7ee787">Pull requests            </tspan><tspan fill="#e6edf3">6</tspan></tspan>
+<tspan x="682" dy="31"><tspan fill="#7ee787">Pull requests            </tspan><tspan fill="#e6edf3">7</tspan></tspan>
 <tspan x="682" dy="31"><tspan fill="#7ee787">Issues                   </tspan><tspan fill="#e6edf3">6</tspan></tspan>
 <tspan x="682" dy="31"><tspan fill="#7ee787">Member since             </tspan><tspan fill="#e6edf3">Jun 2023</tspan></tspan></text>
 
   <text x="682" y="461" fill="#f0f6fc" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700">TOP LANGUAGES</text>
-  <g><rect x="682" y="484" width="184.8" height="8" fill="#3572A5" /><rect x="866.8" y="484" width="97.0" height="8" fill="#E34C26" /><rect x="963.8" y="484" width="70.3" height="8" fill="#3178C6" /><rect x="1034.1" y="484" width="52.9" height="8" fill="#F1E05A" /></g>
+  <g><rect x="682" y="484" width="185.6" height="8" fill="#3572A5" /><rect x="867.6" y="484" width="96.6" height="8" fill="#E34C26" /><rect x="964.2" y="484" width="70.1" height="8" fill="#3178C6" /><rect x="1034.3" y="484" width="52.7" height="8" fill="#F1E05A" /></g>
   <text x="682" y="516" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">Python  ·  HTML  ·  TypeScript  ·  JavaScript</text>
 
   <text x="682" y="557" fill="#39d0d8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">Honolulu, Hawaiʻi  •  building at the edge of AI</text>
