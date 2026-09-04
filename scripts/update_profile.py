@@ -269,7 +269,7 @@ def render_svg(data: dict, theme: str) -> str:
         svg_row(50, kv("OS", "IOS 27, MacOS 27", 59)),
         svg_row(70, kv("Uptime", account_uptime(user["created_at"]), 59)),
         svg_row(90, kv("Host", "OpenAI", 59)),
-        svg_row(110, kv("Kernel", "ChatGPT Lab", 59)),
+        svg_row(110, kv("Kernel", "Student Product Lab", 59)),
         svg_row(130, kv("IDE", "Cursor, VS Code, T3 Code", 59)),
         svg_row(150, [("cc", ". ")]),
         svg_row(170, kv("Languages.Programming", "Python, Java, Swift, Kotlin", 59)),
